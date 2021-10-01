@@ -6,22 +6,22 @@ You may need to install the 'requests' Python3 module.
 Be sure to fill in your username, password, org name and email before running
 """
 
+import argparse
 from os import path
 import requests
-from requests.auth import HTTPBasicAuth
 
-# account details
-USERNAME = 'YOUR USERNAME HERE'
-PASSWORD = 'YOUR PASSWORD HERE'
-EMAIL = 'some_email@gmail.com'
-ORG = 'some org name'
 
-# request details
-BA = 'CAISO_ZP26'  # identify grid region
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--username', help="Your WattTime username", default="YOUR USERNAME HERE")
+    parser.add_argument('--password', help="Your WattTime password", default="YOUR PASSWORD HERE")
+    parser.add_argument('--email', help="Your WattTime email address", default="some_email@gmail.com")
+    parser.add_argument('--org', help="Your WattTime org", default="some org name")
+    parser.add_argument('--region', help="Your grid reguion", default="CAISO_ZP26")
+    parser.add_argument('--start', help="Start Time, UTC offset of 0", default="'2020-03-01T00:00:00-0000'")
+    parser.add_argument('--end', help="End Time, UTC offset of 0", default="2020-03-01T00:45:00-0000")
 
-# starttime and endtime are optional, if ommited will return the latest value
-START = '2020-03-01T00:00:00-0000'  # UTC offset of 0 (PDT is -7, PST -8)
-END = '2020-03-01T00:45:00-0000'
+    return parser.parse_args()
 
 
 def register(username, password, email, org):
@@ -37,7 +37,7 @@ def register(username, password, email, org):
 def login(username, password):
     url = 'https://api2.watttime.org/login'
     try:
-        rsp = requests.get(url, auth=HTTPBasicAuth(username, password))
+        rsp = requests.get(url, auth=requests.auth.HTTPBasicAuth(username, password))
     except BaseException as e:
         print('There was an error making your login request: {}'.format(e))
         return None
@@ -99,27 +99,29 @@ def historical(token, ba):
 
 # Only register once!!
 # register(USERNAME, PASSWORD, EMAIL, ORG)
+if __name__ == "__main__":
+    args = parse_args()
 
-token = login(USERNAME, PASSWORD)
-if not token:
-    print('You will need to fix your login credentials (username and password '
-          'at the start of this file) before you can query other endpoints. '
-          'Make sure that you have registered at least once by uncommenting '
-          'the register(username, password, email, org) line near the bottom '
-          'of this file.')
-    exit()
+    token = login(args.username, args.password)
+    if not token:
+        print('You will need to fix your login credentials (username and password '
+            'at the start of this file) before you can query other endpoints. '
+            'Make sure that you have registered at least once by uncommenting '
+            'the register(username, password, email, org) line near the bottom '
+            'of this file.')
+        exit()
 
-realtime_index = index(token, BA)
-print(realtime_index)
+    realtime_index = index(token, args.region)
+    print(realtime_index)
 
-print('Please note: the following endpoints require a WattTime subscription')
-historical_moer = data(token, BA, START, END)
-print(historical_moer)
+    print('Please note: the following endpoints require a WattTime subscription')
+    historical_moer = data(token, args.region, args.start, args.end)
+    print(historical_moer)
 
-forecast_moer = forecast(token, BA)
-print(forecast_moer)
+    forecast_moer = forecast(token, args.region)
+    print(forecast_moer)
 
-forecast_moer = forecast(token, BA, START, END)
-print(forecast_moer)
+    forecast_moer = forecast(token, args.region, args.start, args.end)
+    print(forecast_moer)
 
-historical(token, BA)  # Writes zip file to current ditectory
+    historical(token, args.region)  # Writes zip file to current ditectory
