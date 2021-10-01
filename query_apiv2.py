@@ -1,20 +1,21 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+
 """
 Only tested in Python 3.
 You may need to install the 'requests' Python3 module.
-
-Be sure to fill in your username, password, org name and email before running
 """
 
 import argparse
-from os import path
+import os 
 import requests
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--username', help="Your WattTime username", default="YOUR USERNAME HERE")
-    parser.add_argument('--password', help="Your WattTime password", default="YOUR PASSWORD HERE")
+    parser.add_argument(
+        '--password', help="Your WattTime password, or set variable WATTTIME_PASS in your env", required=False
+    )
     parser.add_argument('--email', help="Your WattTime email address", default="some_email@gmail.com")
     parser.add_argument('--org', help="Your WattTime org", default="some org name")
     parser.add_argument('--region', help="Your grid reguion", default="CAISO_ZP26")
@@ -26,10 +27,9 @@ def parse_args():
 
 def register(username, password, email, org):
     url = 'https://api2.watttime.org/register'
-    params = {'username': username,
-              'password': password,
-              'email': email,
-              'org': org}
+    params = {
+        'username': username, 'password': password, 'email': email, 'org': org
+    }
     rsp = requests.post(url, json=params)
     print(rsp.text)
 
@@ -89,8 +89,8 @@ def historical(token, ba):
     headers = {'Authorization': 'Bearer {}'.format(token)}
     params = {'ba': ba}
     rsp = requests.get(url, headers=headers, params=params)
-    cur_dir = path.dirname(path.realpath(__file__))
-    file_path = path.join(cur_dir, '{}_historical.zip'.format(ba))
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(cur_dir, '{}_historical.zip'.format(ba))
     with open(file_path, 'wb') as fp:
         fp.write(rsp.content)
 
@@ -102,7 +102,7 @@ def historical(token, ba):
 if __name__ == "__main__":
     args = parse_args()
 
-    token = login(args.username, args.password)
+    token = login(args.username, args.password or os.getenv("WATTTIME_PASS"))
     if not token:
         print('You will need to fix your login credentials (username and password '
             'at the start of this file) before you can query other endpoints. '
